@@ -8,8 +8,8 @@ pipeline {
 
   environment {
     DOCKER_CRED = 'dockerhub'
-    SONAR_TOKEN = credentials('Sonar')    // ← ici !
-    SONAR_URL   = 'http://52.90.58.95:9000'
+    // SonarQube token référencé en Credential “Sonar”
+    SONAR_TOKEN = credentials('Sonar')
     NEXUS_URL   = 'http://52.90.58.95/repository/maven-snapshots/'
   }
 
@@ -25,14 +25,10 @@ pipeline {
     stage('SonarQube Analysis') {
       steps {
         catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+          // Injecte automatiquement SONAR_HOST_URL et SONAR_AUTH_TOKEN
           withSonarQubeEnv('MySonar') {
-            // On précise le projectKey "Sonar"
-            sh """
-              mvn sonar:sonar \
-                -Dsonar.projectKey=Sonar \
-                -Dsonar.host.url=${SONAR_URL} \
-                -Dsonar.login=${SONAR_TOKEN}
-            """
+            // On passe uniquement le projectKey
+            sh 'mvn sonar:sonar -Dsonar.projectKey=Sonar'
           }
         }
       }
