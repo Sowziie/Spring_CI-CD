@@ -8,22 +8,18 @@ pipeline {
 
   environment {
     DOCKER_CRED = 'dockerhub'
-    SONAR_TOKEN = credentials('sonar-token')   // ID de la Credential Jenkins
+    SONAR_TOKEN = credentials('Sonar')    // ← ici !
     SONAR_URL   = 'http://52.90.58.95:9000'
     NEXUS_URL   = 'http://52.90.58.95/repository/maven-snapshots/'
   }
 
   stages {
     stage('Checkout') {
-      steps {
-        checkout scm
-      }
+      steps { checkout scm }
     }
 
     stage('Build & Test') {
-      steps {
-        sh 'mvn clean package -B'
-      }
+      steps { sh 'mvn clean package -B' }
     }
 
     stage('SonarQube Analysis') {
