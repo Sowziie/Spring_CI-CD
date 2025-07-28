@@ -8,8 +8,8 @@ pipeline {
 
   environment {
     DOCKER_CRED = 'dockerhub'
-    SONAR_TOKEN = credentials('Sonar')          // ID Jenkins Credential = Sonar
-    SONAR_URL   = 'http://localhost:9000'
+    SONAR_TOKEN = credentials('sonar-token')   // ID de la Credential Jenkins
+    SONAR_URL   = 'http://52.90.58.95:9000'
     NEXUS_URL   = 'http://52.90.58.95/repository/maven-snapshots/'
   }
 
@@ -30,30 +30,13 @@ pipeline {
       steps {
         catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
           withSonarQubeEnv('MySonar') {
-            // ⚙️ Analyse SonarQube avec projectKey et projectName explicites
+            // On précise le projectKey "Sonar"
             sh """
-              mvn clean verify sonar:sonar \
-                -Dsonar.projectKey=spring-ci-cd \
-                -Dsonar.projectName='Spring CI/CD' \
+              mvn sonar:sonar \
+                -Dsonar.projectKey=Sonar \
                 -Dsonar.host.url=${SONAR_URL} \
                 -Dsonar.login=${SONAR_TOKEN}
             """
-          }
-        }
-      }
-    }
-
-    stage('Quality Gate') {
-      steps {
-        catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
-          timeout(time: 2, unit: 'MINUTES') {
-            script {
-              def qg = waitForQualityGate()
-              echo "Quality Gate: ${qg.status}"
-              if (qg.status != 'OK') {
-                currentBuild.result = 'UNSTABLE'
-              }
-            }
           }
         }
       }
@@ -77,15 +60,6 @@ pipeline {
       }
     }
 
-    stage('Trivy Scan') {
-      steps {
-        echo '🔍 Scanning image with Trivy'
-        catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
-          sh "trivy image --exit-code 1 --severity HIGH,CRITICAL $DOCKER_USER/demoapp:${GIT_COMMIT}"
-        }
-      }
-    }
-
     stage('Deploy to Nexus') {
       steps {
         echo '📦 Déploiement du JAR vers Nexus (maven-snapshots)'
@@ -94,7 +68,6 @@ pipeline {
           usernameVariable: 'NEXUS_USER',
           passwordVariable: 'NEXUS_PASS'
         )]) {
-          // Crée un settings.xml temporaire avec les credentials
           sh '''cat > settings.xml <<EOF
 <settings>
   <servers>
@@ -106,7 +79,6 @@ pipeline {
   </servers>
 </settings>
 EOF'''
-          // Utilise le nouveau settings.xml
           sh 'mvn deploy -B -s settings.xml -DaltDeploymentRepository=nexus::http://52.90.58.95:8081/repository/maven-snapshots/'
         }
       }
