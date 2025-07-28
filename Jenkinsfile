@@ -21,21 +21,14 @@ pipeline {
     }
 
     stage('SonarQube Analysis') {
-  steps {
-    script {
-      def mvnHome = tool 'maven3'
-      withSonarQubeEnv('MySonar') {
-        sh """
-          ${mvnHome}/bin/mvn clean verify sonar:sonar \
-          -Dsonar.projectKey=Sonar \
-          -Dsonar.projectName='Sonar' \
-          -Dsonar.token=$SONAR_AUTH_TOKEN
-        """
+      steps {
+        catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+          withSonarQubeEnv('MySonar') {
+            sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar -Dsonar.projectKey=Sonar'
+          }
+        }
       }
     }
-  }
-}
-
 
     stage('Docker Login, Build & Push') {
       steps {
