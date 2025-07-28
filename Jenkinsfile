@@ -8,8 +8,8 @@ pipeline {
 
   environment {
     DOCKER_CRED = 'dockerhub'
-    // SonarQube token référencé en Credential “Sonar”
-    SONAR_TOKEN = credentials('Sonar')
+    SONAR_TOKEN = credentials('sonar-token')   // Credential Jenkins
+    SONAR_URL   = 'http://52.90.58.95:9000'
     NEXUS_URL   = 'http://52.90.58.95/repository/maven-snapshots/'
   }
 
@@ -25,10 +25,13 @@ pipeline {
     stage('SonarQube Analysis') {
       steps {
         catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
-          // Injecte automatiquement SONAR_HOST_URL et SONAR_AUTH_TOKEN
           withSonarQubeEnv('MySonar') {
-            // On passe uniquement le projectKey
-            sh 'mvn sonar:sonar -Dsonar.projectKey=Sonar'
+            // SONAR_HOST_URL et SONAR_AUTH_TOKEN sont injectés ici
+            sh '''
+              mvn sonar:sonar \
+                -Dsonar.projectKey=Sonar \
+                -Dsonar.login=$SONAR_AUTH_TOKEN
+            '''
           }
         }
       }
@@ -54,7 +57,7 @@ pipeline {
 
     stage('Deploy to Nexus') {
       steps {
-        echo '📦 Déploiement du JAR vers Nexus (maven-snapshots)'
+        echo '📦 Déploiement du JAR vers Nexus'
         withCredentials([usernamePassword(
           credentialsId: 'nexus-credentials',
           usernameVariable: 'NEXUS_USER',
