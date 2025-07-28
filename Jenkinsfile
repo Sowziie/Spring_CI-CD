@@ -1,14 +1,9 @@
 pipeline {
   agent any
 
-  tools {
-    jdk   'jdk17'
-    maven 'maven3'
-  }
-
   environment {
     DOCKER_CRED = 'dockerhub'
-    SONAR_TOKEN = credentials('sonar-token')   // Credential Jenkins
+    SONAR_TOKEN = credentials('Sonar')           // <-- ID exact de ton Secret Text
     SONAR_URL   = 'http://52.90.58.95:9000'
     NEXUS_URL   = 'http://52.90.58.95/repository/maven-snapshots/'
   }
@@ -26,7 +21,7 @@ pipeline {
       steps {
         catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
           withSonarQubeEnv('MySonar') {
-            // SONAR_HOST_URL et SONAR_AUTH_TOKEN sont injectés ici
+            // ici SONAR_HOST_URL et SONAR_AUTH_TOKEN sont injectés
             sh '''
               mvn sonar:sonar \
                 -Dsonar.projectKey=Sonar \
