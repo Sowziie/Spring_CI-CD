@@ -15,18 +15,22 @@ pipeline {
 
   stages {
     stage('Checkout') {
-      steps { checkout scm }
+      steps { 
+        checkout scm 
+      }
     }
 
     stage('Build & Test') {
-      steps { sh 'mvn clean package -B' }
+      steps { 
+        sh 'mvn clean package -B' 
+      }
     }
 
     stage('SonarQube Analysis') {
       steps {
         catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
           // Injecte automatiquement SONAR_HOST_URL et SONAR_AUTH_TOKEN
-          withSonarQubeEnv('MySonar') {
+          withSonarQubeEnv('Sonar') {
             // On passe uniquement le projectKey
             sh 'mvn sonar:sonar -Dsonar.projectKey=Sonar'
           }
