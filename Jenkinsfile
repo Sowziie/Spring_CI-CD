@@ -8,7 +8,7 @@ pipeline {
 
   environment {
     DOCKER_CRED = 'dockerhub'
-    SONAR_TOKEN = credentials('Sonar')          // ID Jenkins Credential = Sonar
+    SONAR_TOKEN = credentials('sonar-token')
     SONAR_URL   = 'http://localhost:9000'
     NEXUS_URL   = 'http://52.90.58.95/repository/maven-snapshots/'
   }
@@ -30,14 +30,7 @@ pipeline {
       steps {
         catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
           withSonarQubeEnv('MySonar') {
-            // ⚙️ Analyse SonarQube avec projectKey et projectName explicites
-            sh """
-              mvn clean verify sonar:sonar \
-                -Dsonar.projectKey=spring-ci-cd \
-                -Dsonar.projectName='Spring CI/CD' \
-                -Dsonar.host.url=${SONAR_URL} \
-                -Dsonar.login=${SONAR_TOKEN}
-            """
+            sh "mvn sonar:sonar -Dsonar.host.url=${SONAR_URL} -Dsonar.login=${SONAR_TOKEN}"
           }
         }
       }
@@ -87,15 +80,15 @@ pipeline {
     }
 
     stage('Deploy to Nexus') {
-      steps {
-        echo '📦 Déploiement du JAR vers Nexus (maven-snapshots)'
-        withCredentials([usernamePassword(
-          credentialsId: 'nexus-credentials',
-          usernameVariable: 'NEXUS_USER',
-          passwordVariable: 'NEXUS_PASS'
-        )]) {
-          // Crée un settings.xml temporaire avec les credentials
-          sh '''cat > settings.xml <<EOF
+  steps {
+    echo '📦 Déploiement du JAR vers Nexus (maven-snapshots)'
+    withCredentials([usernamePassword(
+      credentialsId: 'nexus-credentials',
+      usernameVariable: 'NEXUS_USER',
+      passwordVariable: 'NEXUS_PASS'
+    )]) {
+      // Crée un settings.xml temporaire avec les credentials
+      sh '''cat > settings.xml <<EOF
 <settings>
   <servers>
     <server>
@@ -106,11 +99,12 @@ pipeline {
   </servers>
 </settings>
 EOF'''
-          // Utilise le nouveau settings.xml
-          sh 'mvn deploy -B -s settings.xml -DaltDeploymentRepository=nexus::http://52.90.58.95:8081/repository/maven-snapshots/'
-        }
-      }
+      
+      // Utilise le nouveau settings.xml et corrige la syntaxe du repository
+      sh 'mvn deploy -B -s settings.xml -DaltDeploymentRepository=nexus::http://52.90.58.95:8081/repository/maven-snapshots/'
     }
+  }
+}
   }
 
   post {
