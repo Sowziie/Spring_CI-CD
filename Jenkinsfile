@@ -18,11 +18,17 @@ pipeline {
       }
     }
 
+    stage('Build & Test') {
+      steps {
+        sh 'mvn clean package -B'
+      }
+    }
+
     stage('SonarQube Analysis') {
       steps {
         script {
+          // Utilisation du bloc script pour répliquer la logique du node demandé
           def mvnHome = tool 'maven3'
-          // Injection des variables Sonar depuis la config Jenkins
           withSonarQubeEnv('MySonar') {
             sh "${mvnHome}/bin/mvn clean verify sonar:sonar -Dsonar.projectKey=Sonar -Dsonar.projectName='Sonar'"
           }
