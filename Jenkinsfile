@@ -13,18 +13,18 @@ pipeline {
 
   stages {
     stage('Checkout') {
-      steps { checkout scm }
-    }
-
-    stage('Build & Test') {
-      steps { sh 'mvn clean package -B' }
+      steps {
+        checkout scm
+      }
     }
 
     stage('SonarQube Analysis') {
       steps {
-        catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+        script {
+          def mvnHome = tool 'maven3'
+          // Injection des variables Sonar depuis la config Jenkins
           withSonarQubeEnv('MySonar') {
-            sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar -Dsonar.projectKey=Sonar'
+            sh "${mvnHome}/bin/mvn clean verify sonar:sonar -Dsonar.projectKey=Sonar -Dsonar.projectName='Sonar'"
           }
         }
       }
