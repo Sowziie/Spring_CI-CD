@@ -23,10 +23,12 @@ pipeline {
     stage('SonarQube Analysis') {
       steps {
         catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
-          // 'Sonar' doit être exactement le Name configuré dans Manage Jenkins → SonarQube servers
-          withSonarQubeEnv('Sonar') {
-            // on ne passe QUE le projectKey ; l’URL + le token SONAR_AUTH_TOKEN sont injectés automatiquement
-            sh 'mvn clean verify sonar:sonar -Dsonar.projectKey=Sonar'
+          // Utilise exactement le Name défini dans Manage Jenkins → SonarQube servers
+          withSonarQubeEnv('MySonar') {
+            sh '''
+              mvn org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar \
+              -Dsonar.projectKey=Sonar
+            '''
           }
         }
       }
