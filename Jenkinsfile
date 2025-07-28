@@ -23,12 +23,8 @@ pipeline {
     stage('SonarQube Analysis') {
       steps {
         catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
-          // Utilise exactement le Name défini dans Manage Jenkins → SonarQube servers
           withSonarQubeEnv('MySonar') {
-            sh '''
-              mvn org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar \
-              -Dsonar.projectKey=Sonar
-            '''
+            sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar -Dsonar.projectKey=Sonar'
           }
         }
       }
