@@ -8,31 +8,25 @@ pipeline {
 
   environment {
     DOCKER_CRED = 'dockerhub'
-    // SonarQube token référencé en Credential “Sonar”
-    SONAR_TOKEN = credentials('Sonar')
     NEXUS_URL   = 'http://52.90.58.95/repository/maven-snapshots/'
   }
 
   stages {
     stage('Checkout') {
-      steps { 
-        checkout scm 
-      }
+      steps { checkout scm }
     }
 
     stage('Build & Test') {
-      steps { 
-        sh 'mvn clean package -B' 
-      }
+      steps { sh 'mvn clean package -B' }
     }
 
     stage('SonarQube Analysis') {
       steps {
         catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
-          // Injecte automatiquement SONAR_HOST_URL et SONAR_AUTH_TOKEN
+          // 'Sonar' doit être exactement le Name configuré dans Manage Jenkins → SonarQube servers
           withSonarQubeEnv('Sonar') {
-            // On passe uniquement le projectKey
-            sh 'mvn sonar:sonar -Dsonar.projectKey=Sonar'
+            // on ne passe QUE le projectKey ; l’URL + le token SONAR_AUTH_TOKEN sont injectés automatiquement
+            sh 'mvn clean verify sonar:sonar -Dsonar.projectKey=Sonar'
           }
         }
       }
