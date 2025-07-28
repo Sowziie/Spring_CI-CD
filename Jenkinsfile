@@ -13,28 +13,29 @@ pipeline {
 
   stages {
     stage('Checkout') {
-      steps {
-        checkout scm
-      }
+      steps { checkout scm }
     }
 
     stage('Build & Test') {
-      steps {
-        sh 'mvn clean package -B'
-      }
+      steps { sh 'mvn clean package -B' }
     }
 
     stage('SonarQube Analysis') {
-      steps {
-        script {
-          // Utilisation du bloc script pour répliquer la logique du node demandé
-          def mvnHome = tool 'maven3'
-          withSonarQubeEnv('MySonar') {
-            sh "${mvnHome}/bin/mvn clean verify sonar:sonar -Dsonar.projectKey=Sonar -Dsonar.projectName='Sonar'"
-          }
-        }
+  steps {
+    script {
+      def mvnHome = tool 'maven3'
+      withSonarQubeEnv('MySonar') {
+        sh """
+          ${mvnHome}/bin/mvn clean verify sonar:sonar \
+          -Dsonar.projectKey=Sonar \
+          -Dsonar.projectName='Sonar' \
+          -Dsonar.token=$SONAR_AUTH_TOKEN
+        """
       }
     }
+  }
+}
+
 
     stage('Docker Login, Build & Push') {
       steps {
